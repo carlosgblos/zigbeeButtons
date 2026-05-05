@@ -118,10 +118,24 @@ void wifi_tab_init(lv_obj_t *tab, lv_obj_t *buttons_tab)
     lv_obj_set_style_text_color(device_save_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(device_save_label);
 
+    lv_obj_t *section_divider = lv_obj_create(panel);
+    lv_obj_remove_style_all(section_divider);
+    lv_obj_set_size(section_divider, LV_PCT(100), 26);
+    lv_obj_set_style_bg_opa(section_divider, LV_OPA_TRANSP, 0);
+    lv_obj_clear_flag(section_divider, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *divider_line = lv_obj_create(section_divider);
+    lv_obj_remove_style_all(divider_line);
+    lv_obj_set_size(divider_line, LV_PCT(100), 1);
+    lv_obj_set_style_bg_color(divider_line, lv_color_hex(0x24324D), 0);
+    lv_obj_set_style_bg_opa(divider_line, LV_OPA_COVER, 0);
+    lv_obj_align(divider_line, LV_ALIGN_CENTER, 0, 0);
+
     lv_obj_t *wifi_section_title = lv_label_create(panel);
     lv_label_set_text(wifi_section_title, "WiFi & MQTT Settings");
     lv_obj_set_style_text_font(wifi_section_title, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(wifi_section_title, lv_color_hex(0xE2E8F0), 0);
+    lv_obj_set_style_margin_bottom(wifi_section_title, 2, 0);
 
     lv_obj_t *button_row = lv_obj_create(panel);
     lv_obj_set_flex_flow(button_row, LV_FLEX_FLOW_ROW);

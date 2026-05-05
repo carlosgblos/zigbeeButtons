@@ -90,10 +90,15 @@ const char *btn_config_icon_options_str(void)
 
 void btn_config_load(uint8_t *out_count, btn_cfg_t *out_buttons)
 {
+    if (!out_count || !out_buttons) {
+        return;
+    }
+
     *out_count = BTN_MAX_COUNT;
     for (uint8_t i = 0; i < BTN_MAX_COUNT; i++) {
         snprintf(out_buttons[i].name, BTN_NAME_MAX, "BTN%u", (unsigned)i + 1);
         out_buttons[i].icon_idx = 0;
+        out_buttons[i].type = BTN_TYPE_SWITCH;
     }
 
     if (init_nvs() != ESP_OK) return;

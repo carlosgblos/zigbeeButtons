@@ -6,8 +6,14 @@
 #include "display_helper.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 
+#include "bsp/display.h"
+#include "bsp/esp-bsp.h"
 #include "esp_log.h"
+
+#define DISPLAY_SLEEP_DEFAULT_TIMEOUT_MS 30000
+#define DISPLAY_SLEEP_CHECK_MS          1000
 
 typedef struct {
     lv_obj_t *container;
@@ -20,11 +26,17 @@ typedef struct {
 
 static display_status_bar_t g_status_bar;
 static display_helper_tabs_t g_tabs;
+static lv_timer_t *g_sleep_timer;
+static uint32_t g_sleep_timeout_ms = DISPLAY_SLEEP_DEFAULT_TIMEOUT_MS;
+static uint32_t g_last_activity_ms;
+static bool g_display_sleeping;
 
 static lv_obj_t *create_text_column(lv_obj_t *parent);
 static bool ensure_status_bar_exists(void);
 static void action_button_event_cb(lv_event_t *e);
 static void tab_button_event_cb(lv_event_t *e);
+static void display_sleep_indev_event_cb(lv_event_t *e);
+static void display_sleep_timer_cb(lv_timer_t *timer);
 static void style_tab_button_bar(lv_obj_t *tabview);
 static void anim_set_scale(void *obj, int32_t v);
 static void update_tab_visibility(uint32_t active_idx);
@@ -253,9 +265,63 @@ static void action_button_event_cb(lv_event_t *e)
     display_helper_set_status_text("System Status", "Button tapped");
 }
 
+void display_helper_enable_display_sleep(uint32_t timeout_ms)
+{
+    lv_indev_t *indev = bsp_display_get_input_dev();
+    if (indev == NULL) {
+        ESP_LOGW("display_helper", "Display sleep disabled: input device not ready");
+        return;
+    }
+
+    g_sleep_timeout_ms = timeout_ms > 0 ? timeout_ms : DISPLAY_SLEEP_DEFAULT_TIMEOUT_MS;
+    g_last_activity_ms = lv_tick_get();
+    g_display_sleeping = false;
+
+    lv_indev_add_event_cb(indev, display_sleep_indev_event_cb, LV_EVENT_ALL, NULL);
+    if (g_sleep_timer == NULL) {
+        g_sleep_timer = lv_timer_create(display_sleep_timer_cb, DISPLAY_SLEEP_CHECK_MS, NULL);
+    }
+}
+
 static void anim_set_scale(void *obj, int32_t v)
 {
     lv_obj_set_style_transform_scale((lv_obj_t *)obj, v, 0);
+}
+
+static void display_sleep_indev_event_cb(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_PRESSED && code != LV_EVENT_PRESSING && code != LV_EVENT_RELEASED &&
+        code != LV_EVENT_CLICKED && code != LV_EVENT_LONG_PRESSED &&
+        code != LV_EVENT_LONG_PRESSED_REPEAT) {
+        return;
+    }
+
+    lv_indev_t *indev = (lv_indev_t *)lv_event_get_target(e);
+    g_last_activity_ms = lv_tick_get();
+
+    if (g_display_sleeping && code == LV_EVENT_PRESSED) {
+        g_display_sleeping = false;
+        bsp_display_backlight_on();
+
+        if (indev) {
+            lv_indev_stop_processing(indev);
+            lv_indev_wait_release(indev);
+        }
+    }
+}
+
+static void display_sleep_timer_cb(lv_timer_t *timer)
+{
+    (void)timer;
+    if (g_display_sleeping) {
+        return;
+    }
+
+    if (lv_tick_elaps(g_last_activity_ms) >= g_sleep_timeout_ms) {
+        g_display_sleeping = true;
+        bsp_display_backlight_off();
+    }
 }
 
 static void tab_button_event_cb(lv_event_t *e)

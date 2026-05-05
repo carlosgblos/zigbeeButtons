@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 #include "lvgl.h"
 
 typedef struct {
@@ -22,3 +24,4 @@ void display_helper_set_wifi_indicator(lv_color_t color);
 void display_helper_set_mqtt_indicator(lv_color_t color);
 void display_helper_add_action_button(lv_obj_t *parent);
 bool display_helper_create_tabs(lv_obj_t *parent, display_helper_tabs_t *tabs_out);
+void display_helper_enable_display_sleep(uint32_t timeout_ms);

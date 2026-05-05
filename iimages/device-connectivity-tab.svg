@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect width="800" height="480" fill="#12172b"/>
+  <rect x="0" y="0" width="800" height="54" fill="#071122"/>
+  <text x="28" y="35" fill="#38bdf8" font-family="Arial, sans-serif" font-size="24">WiFi</text>
+  <text x="400" y="35" text-anchor="middle" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="24" font-weight="700">ESP P4 Zigbee Switch</text>
+  <text x="700" y="35" fill="#ef4444" font-family="Arial, sans-serif" font-size="24">MQTT</text>
+  <rect x="0" y="54" width="76" height="426" fill="#071122"/>
+  <rect x="12" y="76" width="52" height="52" rx="8" fill="#0f1b33"/>
+  <text x="38" y="109" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="24">H</text>
+  <rect x="12" y="144" width="52" height="52" rx="8" fill="#2563eb"/>
+  <text x="38" y="177" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24">S</text>
+  <rect x="12" y="212" width="52" height="52" rx="8" fill="#0f1b33"/>
+  <text x="38" y="245" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="24">B</text>
+  <text x="112" y="92" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="24" font-weight="700">Device / Connectivity Settings</text>
+  <rect x="112" y="112" width="640" height="326" rx="8" fill="#071122"/>
+  <text x="136" y="149" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="20" font-weight="700">Device Settings</text>
+  <rect x="136" y="166" width="592" height="44" rx="8" fill="#152238" stroke="#2a3a56"/>
+  <text x="154" y="194" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">espSwitch</text>
+  <rect x="136" y="220" width="592" height="44" rx="8" fill="#152238" stroke="#2a3a56"/>
+  <text x="154" y="248" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">ESP P4 Zigbee Switch</text>
+  <rect x="136" y="274" width="592" height="46" rx="8" fill="#334155"/>
+  <text x="432" y="304" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Apply Device Settings</text>
+  <line x1="136" y1="348" x2="728" y2="348" stroke="#24324d"/>
+  <text x="136" y="385" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="20" font-weight="700">WiFi &amp; MQTT Settings</text>
+  <rect x="136" y="402" width="286" height="42" rx="8" fill="#2563eb"/>
+  <text x="279" y="429" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Scan</text>
+  <rect x="442" y="402" width="286" height="42" rx="8" fill="#334155"/>
+  <text x="585" y="429" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Disconnect</text>
+</svg>

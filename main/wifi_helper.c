@@ -229,9 +229,18 @@ static esp_err_t wifi_helper_connect_internal(const char *ssid, const char *pass
 
 esp_err_t wifi_helper_connect_default(void)
 {
+    ESP_RETURN_ON_ERROR(wifi_helper_init(), TAG, "wifi_helper_init failed");
+    wifi_helper_load_saved_credentials();
+
     if (strlen(s_saved_ssid) > 0) {
         return wifi_helper_connect_internal(s_saved_ssid, s_saved_pass);
     }
+
+    if (strlen(WIFI_HELPER_DEFAULT_SSID) == 0 || strcmp(WIFI_HELPER_DEFAULT_SSID, "myssid") == 0) {
+        wifi_helper_update_ui(false, "WiFi not configured");
+        return ESP_ERR_NOT_FOUND;
+    }
+
     return wifi_helper_connect_internal(WIFI_HELPER_DEFAULT_SSID, WIFI_HELPER_DEFAULT_PASS);
 }
 

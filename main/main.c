@@ -40,12 +40,20 @@ void app_main(void)
 
     bsp_display_lock(0);
     create_ui();
+    display_helper_enable_display_sleep(30000);
     bsp_display_unlock();
 
     ha_switch_init();
 
     ESP_LOGI(TAG, "Starting WiFi...");
-    ESP_ERROR_CHECK(wifi_helper_connect_default());
+    esp_err_t wifi_err = wifi_helper_connect_default();
+    if (wifi_err == ESP_ERR_NOT_FOUND) {
+        ESP_LOGI(TAG, "WiFi credentials not found; open settings to configure");
+        return;
+    } else if (wifi_err != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi connect skipped/failed: %s", esp_err_to_name(wifi_err));
+        return;
+    }
 
     ESP_LOGI(TAG, "Connecting MQTT (if configured)...");
     // Wait a moment for network to stabilize
