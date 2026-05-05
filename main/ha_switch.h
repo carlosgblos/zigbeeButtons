@@ -7,3 +7,6 @@
 
 /* Initialize HA MQTT switch bridge (registers callbacks, publishes discovery on connect). */
 void ha_switch_init(void);
+
+/* Reload button types from NVS — call after saving new button config. */
+void ha_switch_reload_config(void);

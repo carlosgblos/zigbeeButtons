@@ -2,7 +2,7 @@ set(LV_DEMO_DIR ../managed_components/lvgl__lvgl/demos)
 file(GLOB_RECURSE LV_DEMOS_SOURCES ${LV_DEMO_DIR}/*.c)
 
 idf_component_register(
-    SRCS main.c display_helper.c wifi_helper.c mqtt_helper.c ha_switch.c main_tab.c wifi_tab.c keyboard_helper.c ${LV_DEMOS_SOURCES}
+    SRCS main.c display_helper.c wifi_helper.c mqtt_helper.c ha_switch.c main_tab.c wifi_tab.c keyboard_helper.c button_config.c ${LV_DEMOS_SOURCES}
     INCLUDE_DIRS . ${LV_DEMO_DIR})
 
 idf_component_get_property(LVGL_LIB lvgl__lvgl COMPONENT_LIB)

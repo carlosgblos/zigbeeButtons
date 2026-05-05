@@ -115,7 +115,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch (event_id) {
     case MQTT_EVENT_CONNECTED:
         s_connected = true;
-        mqtt_helper_update_ui(true, "MQTT connected");
+        mqtt_helper_update_ui(true, "");
         ESP_LOGI(TAG, "MQTT connected");
         if (s_conn_cb) {
             s_conn_cb(true, s_conn_cb_user);
