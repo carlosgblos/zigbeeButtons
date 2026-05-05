@@ -1,0 +1,25 @@
+**/squareline/backup/**
+**/squareline/autosave/**
+components/lvgl/**
+
+# Build output
+build/
+
+# ESP-IDF managed components (downloaded, not authored)
+managed_components/
+
+# sdkconfig holds user-entered WiFi credentials — never commit
+sdkconfig.old
+
+# Backups
+backup/
+
+# VS Code — user-specific IDE paths (ESP-IDF install, serial port)
+.vscode/settings.json
+
+# AI tool workspace
+.opencode/
+
+# macOS metadata
+.DS_Store
+**/.DS_Store

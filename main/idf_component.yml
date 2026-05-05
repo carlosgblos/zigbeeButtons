@@ -1,0 +1,17 @@
+## IDF Component Manager Manifest File
+dependencies:
+  lvgl/lvgl:
+    version: 9.2.*
+    public: true
+  espressif/esp_lcd_jd9165: "*"
+  espressif/esp_h264: ^1.1.2
+  espressif/esp-dsp: ^1.7.0
+  espressif/esp_wifi_remote:
+    version: '>=0.10,<2.0'
+    rules:
+    - if: target in [esp32p4, esp32h2]
+  espressif/esp_hosted:
+    version: ~2
+    rules:
+    - if: target in [esp32p4, esp32h2]
+  espressif/wifi_remote_over_eppp: '*'
