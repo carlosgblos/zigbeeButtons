@@ -27,18 +27,20 @@
 #define HA_AVAIL_TOPIC      HA_DEVICE_ID "/status"
 #define HA_PAYLOAD_ON       "ON"
 #define HA_PAYLOAD_OFF      "OFF"
+#define HA_PAYLOAD_PRESS    "PRESS"
 
 static const char *TAG = "ha_switch";
 
 static const char *s_command_topics[6];
 static const char *s_state_topics[6];
 static const char *s_label_topics[6];
+static const char *s_action_topics[6];
 static bool s_states[6];
 static uint8_t s_btn_types[6];
 
 static void ha_switch_publish_discovery(void);
 static void ha_switch_publish_state(uint32_t idx);
-static void ha_switch_publish_all_states(void);
+static void ha_switch_publish_scene_action(uint32_t idx);
 static void ha_switch_publish_available(bool online);
 static void ha_switch_on_button(uint32_t btn_id, bool on, void *user);
 static void ha_switch_on_mqtt_msg(const char *topic, const char *payload, int payload_len, void *user);
@@ -98,9 +100,18 @@ void ha_switch_init(void)
         HA_DEVICE_ID "/btn5/label",
         HA_DEVICE_ID "/btn6/label",
     };
+    static const char *actions[] = {
+        HA_DEVICE_ID "/btn1/action",
+        HA_DEVICE_ID "/btn2/action",
+        HA_DEVICE_ID "/btn3/action",
+        HA_DEVICE_ID "/btn4/action",
+        HA_DEVICE_ID "/btn5/action",
+        HA_DEVICE_ID "/btn6/action",
+    };
     memcpy(s_command_topics, cmds, sizeof(cmds));
     memcpy(s_state_topics, states, sizeof(states));
     memcpy(s_label_topics, labels, sizeof(labels));
+    memcpy(s_action_topics, actions, sizeof(actions));
 
     ha_switch_reload_config();
 
@@ -123,6 +134,10 @@ static void ha_switch_on_button(uint32_t btn_id, bool on, void *user)
 {
     (void)user;
     if (btn_id >= 6) {
+        return;
+    }
+    if (s_btn_types[btn_id] == BTN_TYPE_SCENE) {
+        ha_switch_publish_scene_action(btn_id);
         return;
     }
     s_states[btn_id] = on;
@@ -243,23 +258,24 @@ static void ha_switch_publish_discovery(void)
 {
     for (uint32_t i = 0; i < 6; i++) {
         char topic[128];
-        char payload[512];
+        char payload[640];
         bool is_scene = (s_btn_types[i] == BTN_TYPE_SCENE);
 
         if (is_scene) {
-            /* Scene: read-only, no availability tracking.
-             * Omitting availability_topic means HA never marks it unavailable,
-             * so there is no unavailable→state transition on reconnect that
-             * would fire automations. Omitting command_topic makes it read-only. */
             snprintf(topic, sizeof(topic),
                      "homeassistant/switch/%s/btn%u/config", HA_DEVICE_ID, (unsigned)i + 1);
+            mqtt_helper_publish(topic, "", 1, true);
+
+            snprintf(topic, sizeof(topic),
+                     "homeassistant/device_automation/%s/btn%u_scene/config",
+                     HA_DEVICE_ID, (unsigned)i + 1);
             snprintf(payload, sizeof(payload),
                      "{"
-                     "\"name\":\"Scene %u\","
-                     "\"unique_id\":\"%s_btn%u\","
-                     "\"state_topic\":\"%s\","
-                     "\"payload_on\":\"%s\","
-                     "\"payload_off\":\"%s\","
+                     "\"automation_type\":\"trigger\","
+                     "\"topic\":\"%s\","
+                     "\"payload\":\"%s\","
+                     "\"type\":\"button_short_press\","
+                     "\"subtype\":\"scene_%u\","
                      "\"device\":{"
                      "\"identifiers\":[\"%s\"],"
                      "\"name\":\"%s\","
@@ -268,17 +284,20 @@ static void ha_switch_publish_discovery(void)
                      "\"sw_version\":\"%s\""
                      "}"
                      "}",
+                     s_action_topics[i],
+                     HA_PAYLOAD_PRESS,
                      (unsigned)i + 1,
-                     HA_DEVICE_ID, (unsigned)i + 1,
-                     s_state_topics[i],
-                     HA_PAYLOAD_ON,
-                     HA_PAYLOAD_OFF,
                      HA_DEVICE_ID,
                      HA_DEVICE_NAME,
                      HA_MANUFACTURER,
                      HA_MODEL,
                      HA_SW_VERSION);
         } else {
+            snprintf(topic, sizeof(topic),
+                     "homeassistant/device_automation/%s/btn%u_scene/config",
+                     HA_DEVICE_ID, (unsigned)i + 1);
+            mqtt_helper_publish(topic, "", 1, true);
+
             snprintf(topic, sizeof(topic),
                      "homeassistant/switch/%s/btn%u/config", HA_DEVICE_ID, (unsigned)i + 1);
             snprintf(payload, sizeof(payload),
@@ -318,6 +337,19 @@ static void ha_switch_publish_discovery(void)
     }
 }
 
+static void ha_switch_publish_scene_action(uint32_t idx)
+{
+    if (idx >= 6) {
+        return;
+    }
+    esp_err_t err = mqtt_helper_publish(s_action_topics[idx], HA_PAYLOAD_PRESS, 1, false);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Publish scene btn%u failed: %s", (unsigned)idx + 1, esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "Published scene btn%u action to topic: %s", (unsigned)idx + 1, s_action_topics[idx]);
+    }
+}
+
 static void ha_switch_publish_state(uint32_t idx)
 {
     if (idx >= 6) {
@@ -328,13 +360,6 @@ static void ha_switch_publish_state(uint32_t idx)
         ESP_LOGW(TAG, "Publish state btn%u failed: %s", (unsigned)idx + 1, esp_err_to_name(err));
     } else {
         ESP_LOGI(TAG, "Published state btn%u: %s to topic: %s", (unsigned)idx + 1, s_states[idx] ? "ON" : "OFF", s_state_topics[idx]);
-    }
-}
-
-static void ha_switch_publish_all_states(void)
-{
-    for (uint32_t i = 0; i < 6; i++) {
-        ha_switch_publish_state(i);
     }
 }
 

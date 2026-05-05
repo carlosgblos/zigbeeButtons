@@ -39,7 +39,12 @@ static void *s_btn_cb_user;
 static void scene_revert_cb(lv_timer_t *t)
 {
     uint32_t idx = (uint32_t)(uintptr_t)lv_timer_get_user_data(t);
-    lv_obj_set_style_bg_color(s_cards[idx], lv_color_hex(COLOR_OFF), 0);
+    if (idx < BTN_MAX_COUNT) {
+        s_states[idx] = false;
+        if (s_cards[idx]) {
+            lv_obj_set_style_bg_color(s_cards[idx], lv_color_hex(COLOR_OFF), 0);
+        }
+    }
     lv_timer_delete(t);
 }
 
@@ -49,9 +54,8 @@ static void card_click_cb(lv_event_t *e)
     if (idx >= s_count) return;
 
     if (s_types[idx] == BTN_TYPE_SCENE) {
-        s_states[idx] = !s_states[idx];
         lv_obj_set_style_bg_color(s_cards[idx], lv_color_hex(COLOR_ON), 0);
-        if (s_btn_cb) s_btn_cb(idx, s_states[idx], s_btn_cb_user);
+        if (s_btn_cb) s_btn_cb(idx, true, s_btn_cb_user);
         lv_timer_create(scene_revert_cb, SCENE_REVERT_MS, (void *)(uintptr_t)idx);
     } else {
         s_states[idx] = !s_states[idx];
