@@ -7,4 +7,4 @@
 
 #include "lvgl.h"
 
-void wifi_tab_init(lv_obj_t *tab);
+void wifi_tab_init(lv_obj_t *tab, lv_obj_t *buttons_tab);

@@ -119,10 +119,14 @@ bool display_helper_create_tabs(lv_obj_t *parent, display_helper_tabs_t *tabs_ou
     lv_obj_t *wifi_tab = lv_tabview_add_tab(tabview, LV_SYMBOL_SETTINGS);
     lv_obj_set_size(wifi_tab, LV_PCT(100), LV_PCT(100));
     lv_obj_set_flex_grow(wifi_tab, 1);
+    lv_obj_t *buttons_tab = lv_tabview_add_tab(tabview, LV_SYMBOL_LIST);
+    lv_obj_set_size(buttons_tab, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_flex_grow(buttons_tab, 1);
 
     g_tabs.tabview = tabview;
     g_tabs.main_tab = main_tab;
     g_tabs.wifi_tab = wifi_tab;
+    g_tabs.buttons_tab = buttons_tab;
     if (tabs_out) {
         *tabs_out = g_tabs;
     }
@@ -282,17 +286,15 @@ static void style_tab_button_bar(lv_obj_t *tabview)
 
 static void update_tab_visibility(uint32_t active_idx)
 {
-    
-    printf("Inside Visibility %u", active_idx);
-    //LV_UNUSED(active_idx);
-    if (active_idx == 0) {
-        lv_obj_clear_flag(g_tabs.main_tab, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(g_tabs.wifi_tab, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_t *tabs[] = {
+        g_tabs.main_tab,
+        g_tabs.wifi_tab,
+        g_tabs.buttons_tab,
+    };
 
-    }
-    if (active_idx == 1) {
-        lv_obj_clear_flag(g_tabs.wifi_tab, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(g_tabs.main_tab, LV_OBJ_FLAG_HIDDEN);
-
+    for (uint32_t i = 0; i < sizeof(tabs) / sizeof(tabs[0]); i++) {
+        if (!tabs[i]) continue;
+        if (i == active_idx) lv_obj_clear_flag(tabs[i], LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(tabs[i], LV_OBJ_FLAG_HIDDEN);
     }
 }

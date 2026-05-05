@@ -77,6 +77,6 @@ static void create_ui(void)
     display_helper_tabs_t tabs;
     if (display_helper_create_tabs(root, &tabs)) {
         main_tab_init(tabs.main_tab);
-        wifi_tab_init(tabs.wifi_tab);
+        wifi_tab_init(tabs.wifi_tab, tabs.buttons_tab);
     }
 }

@@ -11,6 +11,7 @@ typedef struct {
     lv_obj_t *tabview;
     lv_obj_t *main_tab;
     lv_obj_t *wifi_tab;
+    lv_obj_t *buttons_tab;
 } display_helper_tabs_t;
 
 void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, const char *detail_text);

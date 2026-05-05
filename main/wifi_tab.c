@@ -68,40 +68,18 @@ static void count_inc_cb(lv_event_t *e);
 static void save_buttons_cb(lv_event_t *e);
 static void update_count_ui(void);
 static void preload_button_config(void);
+static lv_obj_t *create_settings_panel(lv_obj_t *tab, const char *title_text);
+static void build_button_config_ui(lv_obj_t *tab);
 
-void wifi_tab_init(lv_obj_t *tab)
+void wifi_tab_init(lv_obj_t *tab, lv_obj_t *buttons_tab)
 {
-    if (!tab) {
+    if (!tab || !buttons_tab) {
         return;
     }
 
     keyboard_helper_init();
 
-    lv_obj_set_size(tab, LV_PCT(100), LV_PCT(100));
-    lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(tab, 16, 0);
-    lv_obj_set_style_pad_gap(tab, 12, 0);
-    lv_obj_set_flex_grow(tab, 1);
-
-    lv_obj_t *title = lv_label_create(tab);
-    lv_label_set_text(title, "WiFi Settings");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_24, 0);
-
-    /* Panel that fills the remaining tab area and contains the controls */
-    lv_obj_t *panel = lv_obj_create(tab);
-    lv_obj_remove_style_all(panel);
-    lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(panel, 12, 0);
-    lv_obj_set_style_pad_gap(panel, 10, 0);
-    lv_obj_set_width(panel, LV_PCT(100));
-    lv_obj_set_flex_grow(panel, 1);
-    lv_obj_set_style_radius(panel, 8, 0);
-    lv_obj_set_style_bg_color(panel, lv_color_hex(0x071122), 0);
-
-    /* Allow the panel to scroll vertically so inputs can be scrolled
-     * into view when the keyboard appears. Show scrollbar when needed. */
-    lv_obj_set_scroll_dir(panel, LV_DIR_VER);
-    lv_obj_set_scrollbar_mode(panel, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_t *panel = create_settings_panel(tab, "Device / Connectivity Settings");
 
     lv_obj_t *device_section_title = lv_label_create(panel);
     lv_label_set_text(device_section_title, "Device Settings");
@@ -203,18 +181,48 @@ void wifi_tab_init(lv_obj_t *tab)
     lv_label_set_text(s_status_label, "Idle");
     lv_obj_set_style_text_color(s_status_label, lv_color_hex(0x94A3B8), 0);
 
-    /* ── Button Config section ── */
-    lv_obj_t *divider = lv_obj_create(panel);
-    lv_obj_remove_style_all(divider);
-    lv_obj_set_size(divider, LV_PCT(100), 1);
-    lv_obj_set_style_bg_color(divider, lv_color_hex(0x334155), 0);
-    lv_obj_set_style_bg_opa(divider, LV_OPA_COVER, 0);
+    build_button_config_ui(buttons_tab);
+
+    set_status_label("Tap Scan to find networks");
+    preload_saved_settings();
+    preload_button_config();
+}
+
+static lv_obj_t *create_settings_panel(lv_obj_t *tab, const char *title_text)
+{
+    lv_obj_set_size(tab, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_all(tab, 16, 0);
+    lv_obj_set_style_pad_gap(tab, 12, 0);
+    lv_obj_set_flex_grow(tab, 1);
+
+    lv_obj_t *title = lv_label_create(tab);
+    lv_label_set_text(title, title_text ? title_text : "Settings");
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_24, 0);
+
+    lv_obj_t *panel = lv_obj_create(tab);
+    lv_obj_remove_style_all(panel);
+    lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_all(panel, 12, 0);
+    lv_obj_set_style_pad_gap(panel, 10, 0);
+    lv_obj_set_width(panel, LV_PCT(100));
+    lv_obj_set_flex_grow(panel, 1);
+    lv_obj_set_style_radius(panel, 8, 0);
+    lv_obj_set_style_bg_color(panel, lv_color_hex(0x071122), 0);
+    lv_obj_set_scroll_dir(panel, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(panel, LV_SCROLLBAR_MODE_AUTO);
+
+    return panel;
+}
+
+static void build_button_config_ui(lv_obj_t *tab)
+{
+    lv_obj_t *panel = create_settings_panel(tab, "Button Settings");
 
     lv_obj_t *btn_section_title = lv_label_create(panel);
     lv_label_set_text(btn_section_title, "Button Config");
     lv_obj_set_style_text_font(btn_section_title, &lv_font_montserrat_20, 0);
 
-    /* Count row: [Buttons:] [−] [N] [+] */
     lv_obj_t *count_row = lv_obj_create(panel);
     lv_obj_remove_style_all(count_row);
     lv_obj_set_flex_flow(count_row, LV_FLEX_FLOW_ROW);
@@ -247,7 +255,6 @@ void wifi_tab_init(lv_obj_t *tab)
     lv_label_set_text(inc_lbl, LV_SYMBOL_PLUS);
     lv_obj_center(inc_lbl);
 
-    /* Per-button rows: [index] [name textarea] [icon dropdown] */
     for (uint8_t i = 0; i < BTN_MAX_COUNT; i++) {
         lv_obj_t *row = lv_obj_create(panel);
         lv_obj_remove_style_all(row);
@@ -288,10 +295,6 @@ void wifi_tab_init(lv_obj_t *tab)
     lv_obj_t *apply_lbl = lv_label_create(apply_btn);
     lv_label_set_text(apply_lbl, "Apply Button Config");
     lv_obj_center(apply_lbl);
-
-    set_status_label("Tap Scan to find networks");
-    preload_saved_settings();
-    preload_button_config();
 }
 
 static void set_status_label(const char *text)
