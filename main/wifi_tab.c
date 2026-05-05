@@ -23,6 +23,7 @@
 #include "button_config.h"
 #include "main_tab.h"
 #include "ha_switch.h"
+#include "device_config.h"
 
 typedef struct {
     char ssid[33];
@@ -31,6 +32,8 @@ typedef struct {
 
 static lv_obj_t *s_dropdown;
 static lv_obj_t *s_password_ta;
+static lv_obj_t *s_device_id_ta;
+static lv_obj_t *s_device_name_ta;
 static lv_obj_t *s_mqtt_host_ta;
 static lv_obj_t *s_mqtt_user_ta;
 static lv_obj_t *s_mqtt_pass_ta;
@@ -53,8 +56,10 @@ static void scan_button_event_cb(lv_event_t *e);
 static void connect_button_event_cb(lv_event_t *e);
 static void disconnect_button_event_cb(lv_event_t *e);
 static void dropdown_changed_event_cb(lv_event_t *e);
+static void save_device_button_event_cb(lv_event_t *e);
 static void save_button_event_cb(lv_event_t *e);
 static void preload_saved_settings(void);
+static esp_err_t maybe_save_device_config(void);
 static esp_err_t maybe_save_mqtt_config(void);
 static void wifi_tab_scan_task(void *param);
 static void wifi_tab_connect_task(void *param);
@@ -97,6 +102,35 @@ void wifi_tab_init(lv_obj_t *tab)
      * into view when the keyboard appears. Show scrollbar when needed. */
     lv_obj_set_scroll_dir(panel, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(panel, LV_SCROLLBAR_MODE_AUTO);
+
+    lv_obj_t *device_section_title = lv_label_create(panel);
+    lv_label_set_text(device_section_title, "Device Settings");
+    lv_obj_set_style_text_font(device_section_title, &lv_font_montserrat_20, 0);
+
+    s_device_id_ta = lv_textarea_create(panel);
+    lv_textarea_set_one_line(s_device_id_ta, true);
+    lv_textarea_set_placeholder_text(s_device_id_ta, "Device ID / MQTT root");
+    lv_textarea_set_max_length(s_device_id_ta, DEVICE_CONFIG_ID_MAX - 1);
+    lv_obj_set_width(s_device_id_ta, LV_PCT(100));
+    keyboard_helper_attach(s_device_id_ta);
+
+    s_device_name_ta = lv_textarea_create(panel);
+    lv_textarea_set_one_line(s_device_name_ta, true);
+    lv_textarea_set_placeholder_text(s_device_name_ta, "Device Name");
+    lv_textarea_set_max_length(s_device_name_ta, DEVICE_CONFIG_NAME_MAX - 1);
+    lv_obj_set_width(s_device_name_ta, LV_PCT(100));
+    keyboard_helper_attach(s_device_name_ta);
+
+    lv_obj_t *device_save_btn = lv_button_create(panel);
+    lv_obj_add_event_cb(device_save_btn, save_device_button_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_set_width(device_save_btn, LV_PCT(100));
+    lv_obj_t *device_save_label = lv_label_create(device_save_btn);
+    lv_label_set_text(device_save_label, "Apply Device Settings");
+    lv_obj_center(device_save_label);
+
+    lv_obj_t *wifi_section_title = lv_label_create(panel);
+    lv_label_set_text(wifi_section_title, "WiFi & MQTT Settings");
+    lv_obj_set_style_text_font(wifi_section_title, &lv_font_montserrat_20, 0);
 
     lv_obj_t *button_row = lv_obj_create(panel);
     lv_obj_remove_style_all(button_row);
@@ -318,6 +352,7 @@ static void connect_button_event_cb(lv_event_t *e)
         return;
     }
 
+    maybe_save_device_config();
     maybe_save_mqtt_config();
 
     wifi_connect_request_t *req = calloc(1, sizeof(wifi_connect_request_t));
@@ -355,14 +390,19 @@ static void save_button_event_cb(lv_event_t *e)
     }
 
     s_save_in_progress = true;
+    esp_err_t device_saved = maybe_save_device_config();
     esp_err_t mqtt_saved = maybe_save_mqtt_config();
     esp_err_t err = wifi_helper_save_credentials(ssid, password);
     if (err == ESP_OK) {
         const char *msg = "Saved. Connecting...";
-        if (mqtt_saved == ESP_OK) {
+        if (device_saved == ESP_OK && mqtt_saved == ESP_OK) {
+            msg = "Saved device + WiFi + MQTT. Connecting...";
+        } else if (mqtt_saved == ESP_OK) {
             msg = "Saved WiFi + MQTT. Connecting...";
         } else if (mqtt_saved != ESP_ERR_NOT_FOUND) {
             msg = "WiFi saved, MQTT save failed";
+        } else if (device_saved != ESP_OK) {
+            msg = "WiFi saved, device save failed";
         }
         set_status_label(msg);
         // Reuse connect task for async connect
@@ -383,6 +423,13 @@ static void save_button_event_cb(lv_event_t *e)
         set_status_label("Save failed");
     }
     s_save_in_progress = false;
+}
+
+static void save_device_button_event_cb(lv_event_t *e)
+{
+    (void)e;
+    esp_err_t err = maybe_save_device_config();
+    set_status_label(err == ESP_OK ? "Device settings saved" : "Device settings save failed");
 }
 
 static void disconnect_button_event_cb(lv_event_t *e)
@@ -406,6 +453,26 @@ static void dropdown_changed_event_cb(lv_event_t *e)
     char msg[64];
     snprintf(msg, sizeof(msg), "Selected: %s", ssid);
     set_status_label(msg);
+}
+
+static esp_err_t maybe_save_device_config(void)
+{
+    if (!s_device_id_ta || !s_device_name_ta) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    const char *id = lv_textarea_get_text(s_device_id_ta);
+    const char *name = lv_textarea_get_text(s_device_name_ta);
+    if (!id || strlen(id) == 0 || !name || strlen(name) == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t err = device_config_save(id, name);
+    if (err == ESP_OK) {
+        display_helper_set_device_name(name);
+        ha_switch_reload_config();
+    }
+    return err;
 }
 
 static esp_err_t maybe_save_mqtt_config(void)
@@ -498,6 +565,12 @@ static void wifi_tab_connect_task(void *param)
 
 static void preload_saved_settings(void)
 {
+    char device_id[DEVICE_CONFIG_ID_MAX] = {0};
+    char device_name[DEVICE_CONFIG_NAME_MAX] = {0};
+    device_config_load(device_id, sizeof(device_id), device_name, sizeof(device_name));
+    lv_textarea_set_text(s_device_id_ta, device_id);
+    lv_textarea_set_text(s_device_name_ta, device_name);
+
     char ssid[33] = {0};
     char password[65] = {0};
     if (wifi_helper_get_saved_credentials(ssid, sizeof(ssid), password, sizeof(password)) == ESP_OK) {

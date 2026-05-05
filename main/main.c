@@ -15,6 +15,7 @@
 #include "main_tab.h"
 #include "wifi_tab.h"
 #include "ha_switch.h"
+#include "device_config.h"
 
 
 static void create_ui(void);
@@ -59,6 +60,9 @@ void app_main(void)
 
 static void create_ui(void)
 {
+    char device_name[DEVICE_CONFIG_NAME_MAX] = {0};
+    device_config_load(NULL, 0, device_name, sizeof(device_name));
+
     lv_obj_t *scr = lv_screen_active();
     lv_obj_t *root = lv_obj_create(scr);
     lv_obj_remove_style_all(root);
@@ -68,6 +72,7 @@ static void create_ui(void)
     lv_obj_set_style_pad_gap(root, 0, 0);
 
     display_helper_create_status_bar(root, "System Status", "Ready");
+    display_helper_set_device_name(device_name);
 
     display_helper_tabs_t tabs;
     if (display_helper_create_tabs(root, &tabs)) {

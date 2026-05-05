@@ -13,6 +13,7 @@ typedef struct {
     lv_obj_t *container;
     lv_obj_t *title_label;
     lv_obj_t *detail_label;
+    lv_obj_t *device_name_label;
     lv_obj_t *wifi_icon;
     lv_obj_t *mqtt_icon;
 } display_status_bar_t;
@@ -26,7 +27,6 @@ static void action_button_event_cb(lv_event_t *e);
 static void tab_button_event_cb(lv_event_t *e);
 static void style_tab_button_bar(lv_obj_t *tabview);
 static void anim_set_scale(void *obj, int32_t v);
-static void tabview_event_cb(lv_event_t *e);
 static void update_tab_visibility(uint32_t active_idx);
 
 void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, const char *detail_text)
@@ -75,6 +75,17 @@ void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, 
     lv_obj_set_style_text_color(g_status_bar.detail_label, lv_color_hex(0x94A3B8), 0);
     lv_obj_set_style_text_font(g_status_bar.detail_label, &lv_font_montserrat_14, 0);
 
+    g_status_bar.device_name_label = lv_label_create(g_status_bar.container);
+    lv_label_set_text(g_status_bar.device_name_label, "");
+    lv_label_set_long_mode(g_status_bar.device_name_label, LV_LABEL_LONG_DOT);
+    lv_obj_set_width(g_status_bar.device_name_label, LV_PCT(42));
+    lv_obj_set_style_text_align(g_status_bar.device_name_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_color(g_status_bar.device_name_label, lv_color_hex(0xE2E8F0), 0);
+    lv_obj_set_style_text_font(g_status_bar.device_name_label, &lv_font_montserrat_24, 0);
+    lv_obj_align(g_status_bar.device_name_label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_add_flag(g_status_bar.device_name_label, LV_OBJ_FLAG_FLOATING);
+    lv_obj_clear_flag(g_status_bar.device_name_label, LV_OBJ_FLAG_CLICKABLE);
+
     /* Connection icons on the right */
     g_status_bar.wifi_icon = lv_label_create(g_status_bar.container);
     lv_label_set_text(g_status_bar.wifi_icon, LV_SYMBOL_WIFI);
@@ -99,6 +110,7 @@ bool display_helper_create_tabs(lv_obj_t *parent, display_helper_tabs_t *tabs_ou
     lv_tabview_set_tab_bar_size(tabview, 64);
     lv_obj_set_size(tabview, LV_PCT(100), LV_PCT(100));
     lv_obj_set_flex_grow(tabview, 1);
+    lv_obj_remove_flag(lv_tabview_get_content(tabview), LV_OBJ_FLAG_SCROLLABLE);
     style_tab_button_bar(tabview);
 
     lv_obj_t *main_tab = lv_tabview_add_tab(tabview, LV_SYMBOL_HOME);
@@ -114,11 +126,6 @@ bool display_helper_create_tabs(lv_obj_t *parent, display_helper_tabs_t *tabs_ou
     if (tabs_out) {
         *tabs_out = g_tabs;
     }
-
-    /* Watch for tab changes caused by swipe/scroll (tabview sends VALUE_CHANGED)
-     * and also attach click handlers to the tab buttons so clicks are detected
-     * (lv_tabview doesn't send VALUE_CHANGED on button clicks). */
-    lv_obj_add_event_cb(tabview, tabview_event_cb, LV_EVENT_ALL, NULL);
 
     lv_obj_t *tab_bar = lv_tabview_get_tab_bar(tabview);
     for (uint32_t i = 0; i < lv_tabview_get_tab_count(tabview); i++) {
@@ -174,6 +181,14 @@ void display_helper_set_status_text(const char *title_text, const char *detail_t
     if (detail_text && g_status_bar.detail_label) {
         lv_label_set_text(g_status_bar.detail_label, detail_text);
     }
+}
+
+void display_helper_set_device_name(const char *device_name)
+{
+    if (!ensure_status_bar_exists() || g_status_bar.device_name_label == NULL) {
+        return;
+    }
+    lv_label_set_text(g_status_bar.device_name_label, device_name ? device_name : "");
 }
 
 void display_helper_set_wifi_indicator(lv_color_t color)
@@ -239,20 +254,6 @@ static void anim_set_scale(void *obj, int32_t v)
     lv_obj_set_style_transform_scale((lv_obj_t *)obj, v, 0);
 }
 
-static void tabview_event_cb(lv_event_t *e)
-{
-    /* Use current_target to ensure we are referencing the Tabview itself */
-    lv_obj_t * tabviewx = lv_event_get_current_target(e);
-    lv_event_code_t codex = lv_event_get_code(e);
-
-    if(codex == LV_EVENT_VALUE_CHANGED) {
-        uint32_t active_tab_index = lv_tabview_get_tab_active(tabviewx);
-        
-        LV_LOG_USER("Tab changed to index: %d", active_tab_index);
-        update_tab_visibility(active_tab_index);
-    }
-}
-
 static void tab_button_event_cb(lv_event_t *e)
 {
     /* user_data holds the tabview object we passed when registering the callback */
@@ -264,6 +265,7 @@ static void tab_button_event_cb(lv_event_t *e)
     }
 
     uint32_t active = lv_tabview_get_tab_active(tabview);
+    lv_tabview_set_active(tabview, active, LV_ANIM_OFF);
     update_tab_visibility(active);
 }
 
