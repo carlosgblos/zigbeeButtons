@@ -1,170 +1,427 @@
-# LVGL Demo v9
+# SmartP4 Switch
 
-[中文版本](./README_CN.md)
+SmartP4 Switch turns an ESP32-P4 7-inch touchscreen into a Home Assistant MQTT control panel. It is designed for home deployments where a wall, desk, or shelf display should expose a small set of reliable controls without needing a browser dashboard.
 
-This example demonstrates how to port LVGL v9 and conduct performance testing using LVGL's built-in demos. The example utilizes the development board's MIPI-DSI interface. Based on this example, applications based on LVGL v9 can be developed.
+The firmware provides:
 
+- A touch UI built with LVGL.
+- Up to 6 configurable buttons.
+- Switch buttons that sync state with Home Assistant over MQTT.
+- Scene buttons that publish MQTT trigger events for Home Assistant automations.
+- On-device WiFi, MQTT, device, and button configuration.
+- MQTT availability so Home Assistant can show whether the device is online.
 
-## Getting Started
+## Hardware
 
+This project targets the GUITION/SpotPear-style `JC1060P470C` ESP32-P4 7-inch touchscreen board, sold under listings such as:
 
-### Prerequisites
+- AliExpress listing supplied for this project: https://www.aliexpress.us/item/3256811927030877.html
+- Reference user guide: https://spotpear.com/wiki/ESP32-P4-Display-7inch-TouchScreen-JC1060P470C.html
+- Board overview article: https://www.cnx-software.com/2025/05/06/7-inch-esp32-p4-wireless-touchscreen-display-supports-guition-designer-for-lvgl-arduino-and-esp-idf-programming/
 
-* An ESP32-P4-Function-EV-Board.
-* A 7-inch 1024 x 600 LCD screen powered by the [EK79007](https://dl.espressif.com/dl/schematics/display_driver_chip_EK79007AD_datasheet.pdf) IC, accompanied by a 32-pin FPC connection [adapter board](https://dl.espressif.com/dl/schematics/esp32-p4-function-ev-board-lcd-subboard-schematics.pdf) ([LCD Specifications](https://dl.espressif.com/dl/schematics/display_datasheet.pdf)).
-* A USB-C cable for power supply and programming.
-* Please refer to the following steps for the connection:
-    * **Step 1**. According to the table below, connect the pins on the back of the screen adapter board to the corresponding pins on the development board.
+Common board characteristics:
 
-        | Screen Adapter Board | ESP32-P4-Function-EV-Board |
-        | -------------------- | -------------------------- |
-        | 5V (any one)         | 5V (any one)               |
-        | GND (any one)        | GND (any one)              |
-        | PWM                  | GPIO26                     |
-        | LCD_RST              | GPIO27                     |
+- ESP32-P4 main MCU.
+- ESP32-C6 companion chip for WiFi/Bluetooth connectivity.
+- 7-inch 1024 x 600 capacitive touchscreen.
+- 16 MB flash and PSRAM.
+- USB-C for power/programming.
+- TF/microSD slot and expansion connectors, depending on kit variant.
 
-    * **Step 2**. Connect the FPC of LCD through the `MIPI_DSI` interface.
-    * **Step 3**. Use a USB-C cable to connect the `USB-UART` port to a PC (Used for power supply and viewing serial output).
-    * **Step 4**. Turn on the power switch of the board.
+This firmware is configured for `esp32p4`, 16 MB flash, PSRAM, LVGL, and the board support components already included in the repository.
 
+## Requirements
 
-### ESP-IDF Required
+You need:
 
-- This example supports ESP-IDF release/v5.3 and later branches. By default, it runs on ESP-IDF release/v5.3.
-- Please follow the [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) to set up the development environment. **We highly recommend** you [Build Your First Project](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project) to get familiar with ESP-IDF and make sure the environment is set up correctly.
+- The supported ESP32-P4 7-inch touchscreen board.
+- USB-C cable that supports data.
+- ESP-IDF installed and exported in your shell.
+- Home Assistant running on your network.
+- MQTT enabled in Home Assistant, usually with the Mosquitto broker add-on.
+- A 2.4 GHz WiFi network reachable by the device.
 
-### Get the esp-dev-kits Repository
+ESP-IDF 5.5 is known to build this repository. ESP32-P4 support requires a recent ESP-IDF release.
 
-To start from the examples in esp-dev-kits, clone the repository to the local PC by running the following commands in the terminal:
+## Build And Flash
 
+From the repository root:
+
+```bash
+source ~/esp/esp-idf/export.sh
+idf.py set-target esp32p4
+idf.py build
 ```
-git clone --recursive https://github.com/espressif/esp-dev-kits.git
-```
 
+Connect the board over USB-C. Find the serial port:
 
-### Configuration
-
-Run ``idf.py menuconfig`` and go to ``Board Support Package(ESP32-P4)``:
-
-```
-menuconfig > Component config > Board Support Package
-```
-
-
-## How to Use the Example
-
-
-### Build and Flash the Example
-
-Build the project and flash it to the board, then run monitor tool to view serial output (replace `PORT` with your board's serial port name):
-
-```c
+```bash
 idf.py -p PORT flash monitor
 ```
 
-To exit the serial monitor, type ``Ctrl-]``.
+Replace `PORT` with your device port, for example:
 
-See the [ESP-IDF Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+```bash
+idf.py -p /dev/tty.usbmodemXXXX flash monitor
+```
 
+To leave the serial monitor, press `Ctrl+]`.
 
-### Example Output
+The build uses:
 
-- The complete log is as follows:
+- `sdkconfig.defaults` for ESP32-P4, 16 MB flash, PSRAM, LVGL, and WiFi hosted support.
+- `partitions.csv` with NVS, PHY data, an 8 MB factory app partition, and a 7 MB SPIFFS storage partition.
 
-    ```c
-    I (25) boot: ESP-IDF v5.4-dev-2167-gdef35b1ca7-dirty 2nd stage bootloader
-    I (26) boot: compile time Sep 27 2024 17:00:31
-    I (27) boot: Multicore bootloader
-    I (32) boot: chip revision: v0.1
-    I (35) qio_mode: Enabling default flash chip QIO
-    I (40) boot.esp32p4: SPI Speed      : 80MHz
-    I (45) boot.esp32p4: SPI Mode       : QIO
-    I (49) boot.esp32p4: SPI Flash Size : 16MB
-    I (54) boot: Enabling RNG early entropy source...
-    I (60) boot: Partition Table:
-    I (63) boot: ## Label            Usage          Type ST Offset   Length
-    I (70) boot:  0 nvs              WiFi data        01 02 00009000 00006000
-    I (78) boot:  1 phy_init         RF data          01 01 0000f000 00001000
-    I (85) boot:  2 factory          factory app      00 00 00010000 00800000
-    I (93) boot:  3 storage          Unknown data     01 82 00810000 00700000
-    I (101) boot: End of partition table
-    I (105) esp_image: segment 0: paddr=00010020 vaddr=48060020 size=bacdch (765148) map
-    I (233) esp_image: segment 1: paddr=000cad04 vaddr=30100000 size=00020h (    32) load
-    I (235) esp_image: segment 2: paddr=000cad2c vaddr=30100020 size=0003ch (    60) load
-    I (240) esp_image: segment 3: paddr=000cad70 vaddr=4ff00000 size=052a8h ( 21160) load
-    I (253) esp_image: segment 4: paddr=000d0020 vaddr=48000020 size=5b534h (374068) map
-    I (315) esp_image: segment 5: paddr=0012b55c vaddr=4ff052a8 size=1caa0h (117408) load
-    I (338) esp_image: segment 6: paddr=00148004 vaddr=4ff21d80 size=03074h ( 12404) load
-    I (348) boot: Loaded app from partition at offset 0x10000
-    I (349) boot: Disabling RNG early entropy source...
-    I (360) hex_psram: vendor id    : 0x0d (AP)
-    I (361) hex_psram: Latency      : 0x01 (Fixed)
-    I (361) hex_psram: DriveStr.    : 0x00 (25 Ohm)
-    I (364) hex_psram: dev id       : 0x03 (generation 4)
-    I (370) hex_psram: density      : 0x07 (256 Mbit)
-    I (375) hex_psram: good-die     : 0x06 (Pass)
-    I (380) hex_psram: SRF          : 0x02 (Slow Refresh)
-    I (386) hex_psram: BurstType    : 0x00 ( Wrap)
-    I (391) hex_psram: BurstLen     : 0x03 (2048 Byte)
-    I (397) hex_psram: BitMode      : 0x01 (X16 Mode)
-    I (402) hex_psram: Readlatency  : 0x04 (14 cycles@Fixed)
-    I (408) hex_psram: DriveStrength: 0x00 (1/1)
-    I (413) MSPI DQS: tuning success, best phase id is 2
-    I (597) MSPI DQS: tuning success, best delayline id is 11
-    I esp_psram: Found 32MB PSRAM device
-    I esp_psram: Speed: 200MHz
-    I (597) mmu_psram: flash_drom_paddr_start: 0x10000
-    I (640) mmu_psram: flash_irom_paddr_start: 0xd0000
-    I (659) hex_psram: psram CS IO is dedicated
-    I (659) cpu_start: Multicore app
-    I (1091) esp_psram: SPI SRAM memory test OK
-    W (1101) clk: esp_perip_clk_init() has not been implemented yet
-    I (1108) cpu_start: Pro cpu start user code
-    I (1108) cpu_start: cpu freq: 360000000 Hz
-    I (1108) app_init: Application information:
-    I (1111) app_init: Project name:     lvgl_demo_v9
-    I (1117) app_init: App version:      7e53cd00-dirty
-    I (1122) app_init: Compile time:     Sep 27 2024 17:00:22
-    I (1128) app_init: ELF file SHA256:  506da7290...
-    I (1134) app_init: ESP-IDF:          v5.4-dev-2167-gdef35b1ca7-dirty
-    I (1141) efuse_init: Min chip rev:     v0.1
-    I (1146) efuse_init: Max chip rev:     v0.99 
-    I (1151) efuse_init: Chip rev:         v0.1
-    I (1155) heap_init: Initializing. RAM available for dynamic allocation:
-    I (1163) heap_init: At 4FF26B50 len 00014470 (81 KiB): RAM
-    I (1169) heap_init: At 4FF3AFC0 len 00004BF0 (18 KiB): RAM
-    I (1175) heap_init: At 4FF40000 len 00040000 (256 KiB): RAM
-    I (1182) heap_init: At 50108080 len 00007F80 (31 KiB): RTCRAM
-    I (1188) heap_init: At 3010005C len 00001FA4 (7 KiB): TCM
-    I (1194) esp_psram: Adding pool of 30848K of PSRAM memory to heap allocator
-    I (1202) spi_flash: detected chip: generic
-    I (1206) spi_flash: flash io: qio
-    W (1210) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`
-    I (1221) main_task: Started on CPU0
-    I (1244) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
-    I (1244) main_task: Calling app_main()
-    I (1246) LVGL: Starting LVGL task
-    W (1250) ledc: GPIO 26 is not usable, maybe conflict with others
-    I (1257) ESP32_P4_EV: MIPI DSI PHY Powered on
-    I (1263) ESP32_P4_EV: Install MIPI DSI LCD control panel
-    I (1268) ESP32_P4_EV: Install EK79007 LCD control panel
-    I (1274) ek79007: version: 0.1.0
-    I (1278) gpio: GPIO[27]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
-    I (1444) ESP32_P4_EV: Display initialized
-    E (1446) lcd_panel: esp_lcd_panel_swap_xy(50): swap_xy is not supported by this panel
-    W (1446) GT911: Unable to initialize the I2C address
-    I (1452) GT911: TouchPad_ID:0x39,0x31,0x31
-    I (1456) GT911: TouchPad_Config_Version:89
-    I (1461) ESP32_P4_EV: Setting LCD backlight: 100%
-    I (1542) main_task: Returned from app_main()
-    ...
-    ```
+## First Boot
 
-## Technical Support and Feedback
+On first boot the device may show WiFi as disconnected because no credentials have been saved yet.
 
-Please use the following feedback channels:
+Use the touchscreen:
 
-- For technical queries, go to the [esp32.com](https://esp32.com/viewforum.php?f=22) forum.
-- For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-dev-kits/issues).
+1. Open the settings tab.
+2. Tap `Scan`.
+3. Select your WiFi network.
+4. Enter the WiFi password.
+5. Enter device and MQTT settings.
+6. Tap `Save & Connect`.
 
-We will get back to you as soon as possible.
+Saved settings are stored in NVS, so they survive reboot and power loss.
+
+## Device Settings
+
+The Device Settings section controls how the device identifies itself in MQTT and Home Assistant.
+
+| Field | Example | Required | Meaning |
+| --- | --- | --- | --- |
+| Device ID / MQTT root | `espSwitch` | Yes | Root MQTT topic and unique ID prefix. All button topics are built from this value. |
+| Device Name | `Kitchen Wall Switch` | Yes | Friendly name shown on the device header and in Home Assistant device metadata. |
+
+### Device ID Rules
+
+Recommended format:
+
+- Use lowercase letters, numbers, underscores, or hyphens.
+- Avoid spaces.
+- Keep it stable after Home Assistant entities are created.
+
+Examples:
+
+- `kitchen_switch`
+- `livingroom_panel`
+- `bedroom_p4`
+
+The default Device ID is:
+
+```text
+espSwitch
+```
+
+With that default, button 1 uses:
+
+```text
+espSwitch/btn1/state
+espSwitch/btn1/set
+espSwitch/btn1/label
+```
+
+Changing the Device ID changes the MQTT topics and Home Assistant unique IDs. If you change it after setup, Home Assistant may create new entities instead of reusing the old ones.
+
+## WiFi And MQTT Settings
+
+| Field | Example | Required | Meaning |
+| --- | --- | --- | --- |
+| WiFi network | `HomeWiFi` | Yes | SSID selected from scan results. |
+| Password | `your-wifi-password` | Usually | WiFi password. Leave blank only for open networks. |
+| MQTT Broker IP / host | `192.168.1.10` or `mqtt://homeassistant.local` | Yes for Home Assistant integration | MQTT broker hostname, IP, or full URI. If no URI scheme is supplied, firmware prepends `mqtt://`. |
+| MQTT User | `smartp4` | Depends on broker | MQTT username. For Mosquitto, create a Home Assistant user or broker user. |
+| MQTT Password | `secret` | Depends on broker | MQTT password for the user above. |
+
+Buttons:
+
+- `Scan`: scans nearby WiFi networks.
+- `Connect`: connects using the current screen values and saves device/MQTT settings.
+- `Save & Connect`: saves device, WiFi, and MQTT settings, then connects.
+- `Disconnect`: disconnects WiFi and stops MQTT.
+
+## Button Settings
+
+Open the button settings tab to configure what appears on the main screen.
+
+| Field | Range | Meaning |
+| --- | --- | --- |
+| Buttons | 1 to 6 | Number of active buttons shown on the main screen. |
+| Name | Up to 15 characters | Label shown on the device button. |
+| Icon | 21 choices | LVGL symbol shown above the label. |
+| Type | `Switch` or `Scene` | Determines MQTT behavior. |
+
+Available icons:
+
+```text
+Audio, Battery, Bell, Bluetooth, Charge, Eye, Fan, GPS, Home, Light,
+Loop, Mail, Phone, Power, Projector, Settings, Speaker, Trash, Warning,
+Water, WiFi
+```
+
+Tap `Apply Button Config` after editing buttons. The main screen and MQTT/Home Assistant configuration are refreshed after saving.
+
+## Button Types
+
+### Switch
+
+A switch button is a stateful Home Assistant switch.
+
+When tapped on the device:
+
+- The device toggles local UI state.
+- It publishes `ON` or `OFF` to the button state topic.
+
+When controlled from Home Assistant:
+
+- Home Assistant publishes to the command topic.
+- The device updates the local button state.
+- The device publishes the resulting state back to MQTT.
+
+Accepted command payloads:
+
+- On: `ON`, `on`, `yes`, `true`, `1`, `T`, `t`
+- Off: `OFF`, `off`, `no`, `false`, `0`
+
+### Scene
+
+A scene button is stateless and send-only.
+
+When tapped on the device:
+
+- The device publishes `PRESS` to the action topic.
+- It does not subscribe to a command topic.
+- It does not keep an on/off state.
+
+Use scene buttons for Home Assistant automations such as "Good night", "Movie mode", "Open garage", or "Run cleaning scene".
+
+## MQTT Topic Reference
+
+Every topic uses the Device ID as the root:
+
+```text
+<device_id>/status
+<device_id>/btnN/state
+<device_id>/btnN/set
+<device_id>/btnN/label
+<device_id>/btnN/action
+```
+
+Where:
+
+- `<device_id>` is the Device ID / MQTT root field.
+- `N` is the button number from 1 to 6.
+
+For the default Device ID `espSwitch`:
+
+| Purpose | Topic | Payload |
+| --- | --- | --- |
+| Availability | `espSwitch/status` | `online` or `offline` |
+| Button 1 switch state | `espSwitch/btn1/state` | `ON` or `OFF` |
+| Button 1 switch command | `espSwitch/btn1/set` | `ON` or `OFF` |
+| Button 1 screen label update | `espSwitch/btn1/label` | Text, max 15 visible chars |
+| Button 1 scene action | `espSwitch/btn1/action` | `PRESS` |
+
+Label topics let Home Assistant or another MQTT client update the label shown on the device. For example:
+
+```bash
+mosquitto_pub -h 192.168.1.10 -t espSwitch/btn1/label -m "Kitchen"
+```
+
+## Home Assistant Setup
+
+### 1. Install MQTT
+
+In Home Assistant:
+
+1. Go to `Settings` > `Add-ons`.
+2. Install `Mosquitto broker`.
+3. Start the broker.
+4. Enable `Start on boot`.
+5. Go to `Settings` > `Devices & services`.
+6. Add or configure the `MQTT` integration.
+
+Create a dedicated MQTT user if your broker requires authentication. Use that username and password in the device MQTT settings.
+
+### 2. Confirm MQTT Discovery
+
+The firmware publishes Home Assistant MQTT discovery messages when MQTT connects. If MQTT discovery is enabled, Home Assistant should create switch entities and scene-button triggers automatically.
+
+Discovery topics published by the device:
+
+```text
+homeassistant/switch/<device_id>/btnN/config
+homeassistant/device_automation/<device_id>/btnN_scene/config
+```
+
+Switch buttons publish switch discovery. Scene buttons publish device automation trigger discovery.
+
+### 3. Manual Switch YAML Fallback
+
+If you prefer manual YAML or discovery is disabled, add switches like this to Home Assistant configuration:
+
+```yaml
+mqtt:
+  switch:
+    - name: "My ESP Switch 1"
+      unique_id: espSwitch_btn1
+      state_topic: "espSwitch/btn1/state"
+      command_topic: "espSwitch/btn1/set"
+      availability_topic: "espSwitch/status"
+      payload_available: "online"
+      payload_not_available: "offline"
+      payload_on: "ON"
+      payload_off: "OFF"
+      qos: 1
+
+    - name: "My ESP Switch 2"
+      unique_id: espSwitch_btn2
+      state_topic: "espSwitch/btn2/state"
+      command_topic: "espSwitch/btn2/set"
+      availability_topic: "espSwitch/status"
+      payload_available: "online"
+      payload_not_available: "offline"
+      payload_on: "ON"
+      payload_off: "OFF"
+      qos: 1
+```
+
+For additional switch buttons, increment the button number in:
+
+- `unique_id`
+- `state_topic`
+- `command_topic`
+
+Example for button 3:
+
+```yaml
+unique_id: espSwitch_btn3
+state_topic: "espSwitch/btn3/state"
+command_topic: "espSwitch/btn3/set"
+```
+
+Restart Home Assistant after editing YAML, or reload MQTT entities if your Home Assistant version supports it.
+
+### 4. Scene Button Automations
+
+For a scene button, trigger an automation from the action topic.
+
+Example for button 5:
+
+```yaml
+alias: SmartP4 Button 5 Scene
+mode: single
+triggers:
+  - trigger: mqtt
+    topic: espSwitch/btn5/action
+    payload: PRESS
+actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.movie_mode
+```
+
+Older Home Assistant automation syntax may use `platform: mqtt`:
+
+```yaml
+alias: SmartP4 Button 5 Scene
+mode: single
+trigger:
+  - platform: mqtt
+    topic: espSwitch/btn5/action
+    payload: PRESS
+action:
+  - service: scene.turn_on
+    target:
+      entity_id: scene.movie_mode
+```
+
+If you changed the Device ID, replace `espSwitch` with your Device ID.
+
+## Naming Strategy
+
+Use names that make sense after you deploy multiple devices.
+
+Recommended:
+
+| Device location | Device ID | Device Name |
+| --- | --- | --- |
+| Kitchen | `kitchen_panel` | `Kitchen Panel` |
+| Living room | `livingroom_switch` | `Living Room Switch` |
+| Bedroom | `bedroom_p4` | `Bedroom P4 Switch` |
+
+Recommended button names:
+
+- `Lights`
+- `Fan`
+- `Movie`
+- `Night`
+- `Garage`
+- `Away`
+
+Keep button names short because the device UI has limited space. The firmware stores up to 15 characters per button name.
+
+## Suggested Home Deployment Flow
+
+1. Flash the firmware.
+2. Boot the device near your router for first setup.
+3. Configure Device ID and Device Name first.
+4. Configure WiFi and MQTT.
+5. Tap `Save & Connect`.
+6. Confirm the MQTT integration shows the device/entities in Home Assistant.
+7. Configure buttons as switch or scene.
+8. Add scene automations for scene buttons.
+9. Move the device to its final location.
+10. Confirm WiFi signal, MQTT status, and button response from Home Assistant.
+
+## Troubleshooting
+
+### Device does not appear in Home Assistant
+
+- Confirm WiFi is connected.
+- Confirm MQTT broker host, username, and password.
+- Confirm the MQTT integration is enabled in Home Assistant.
+- Confirm MQTT discovery is enabled if you expect automatic entities.
+- Check that the Device ID is stable and does not contain spaces.
+
+### Switch entity appears but does not control the device
+
+- Confirm the button type is `Switch`, not `Scene`.
+- Confirm the command topic matches `<device_id>/btnN/set`.
+- Publish `ON` or `OFF` manually with an MQTT tool and watch the device.
+
+### Scene automation does not run
+
+- Confirm the button type is `Scene`.
+- Confirm the automation listens to `<device_id>/btnN/action`.
+- Confirm the payload is exactly `PRESS`.
+
+### Device shows offline in Home Assistant
+
+- The availability topic is `<device_id>/status`.
+- Online payload is `online`.
+- Offline payload is `offline`.
+- Confirm the device is connected to MQTT.
+
+### Changed Device ID and now entities duplicated
+
+Home Assistant uses MQTT unique IDs based on the Device ID. Changing Device ID can create a new set of entities. Remove the old entities from Home Assistant or change the Device ID back.
+
+## Display Mockups
+
+These mockups are AI-generated/documentation-generated illustrations based on the LVGL layout in this repository. They are not photos of the physical screen.
+
+| Main Controls | Connectivity Settings | Button Settings |
+| --- | --- | --- |
+| ![Main controls mockup](docs/mockups/main-controls.svg) | ![Connectivity settings mockup](docs/mockups/connectivity-settings.svg) | ![Button settings mockup](docs/mockups/button-settings.svg) |
+
+## Project Notes
+
+- Firmware version shown on screen: `SmartP4 Switch v1.0`.
+- Home Assistant device model: `ESP32-P4 Switch`.
+- Home Assistant software version: `1.0`.
+- Maximum buttons: 6.
+- Display sleep timeout: 30 seconds.

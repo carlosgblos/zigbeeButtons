@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="600" viewBox="0 0 1024 600" role="img" aria-label="AI-generated mockup of the SmartP4 Switch button settings screen">
+  <rect width="1024" height="600" fill="#12172b"/>
+  <rect width="1024" height="64" fill="#0f172a" opacity="0.96"/>
+  <text x="12" y="18" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="14">SmartP4 Switch v1.0</text>
+  <text x="512" y="42" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="26" text-anchor="middle">Kitchen Panel</text>
+  <text x="24" y="48" fill="#94a3b8" font-family="Arial, sans-serif" font-size="14">Button config saved</text>
+  <rect x="0" y="64" width="64" height="536" fill="#0b1224"/>
+  <rect x="8" y="212" width="48" height="48" rx="8" fill="#1e40af"/>
+  <text x="32" y="244" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" text-anchor="middle">☰</text>
+  <text x="96" y="104" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="26">Button Settings</text>
+  <rect x="96" y="124" width="872" height="430" rx="8" fill="#071122"/>
+  <text x="120" y="164" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="22">Button Config</text>
+  <rect x="120" y="184" width="824" height="56" rx="8" fill="#0f1b33" stroke="#24324d"/>
+  <text x="140" y="219" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="18">Buttons:</text>
+  <rect x="230" y="192" width="40" height="40" rx="8" fill="#334155"/>
+  <text x="250" y="219" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" text-anchor="middle">−</text>
+  <text x="302" y="220" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" text-anchor="middle">6</text>
+  <rect x="334" y="192" width="40" height="40" rx="8" fill="#334155"/>
+  <text x="354" y="219" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" text-anchor="middle">+</text>
+  <g font-family="Arial, sans-serif" font-size="16">
+    <rect x="120" y="258" width="824" height="58" rx="8" fill="#0b152a" stroke="#1e2b44"/>
+    <text x="140" y="294" fill="#94a3b8">1:</text>
+    <rect x="178" y="266" width="356" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="192" y="293" fill="#f8fafc">Kitchen</text>
+    <rect x="550" y="266" width="170" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="566" y="293" fill="#f8fafc">Light</text>
+    <rect x="736" y="266" width="160" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="752" y="293" fill="#f8fafc">Switch</text>
+    <rect x="120" y="326" width="824" height="58" rx="8" fill="#0b152a" stroke="#1e2b44"/>
+    <text x="140" y="362" fill="#94a3b8">2:</text>
+    <rect x="178" y="334" width="356" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="192" y="361" fill="#f8fafc">Fan</text>
+    <rect x="550" y="334" width="170" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="566" y="361" fill="#f8fafc">Fan</text>
+    <rect x="736" y="334" width="160" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="752" y="361" fill="#f8fafc">Switch</text>
+    <rect x="120" y="394" width="824" height="58" rx="8" fill="#0b152a" stroke="#1e2b44"/>
+    <text x="140" y="430" fill="#94a3b8">3:</text>
+    <rect x="178" y="402" width="356" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="192" y="429" fill="#f8fafc">Movie</text>
+    <rect x="550" y="402" width="170" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="566" y="429" fill="#f8fafc">Projector</text>
+    <rect x="736" y="402" width="160" height="42" rx="7" fill="#152238" stroke="#2a3a56"/>
+    <text x="752" y="429" fill="#f8fafc">Scene</text>
+  </g>
+  <rect x="120" y="482" width="824" height="48" rx="8" fill="#2563eb"/>
+  <text x="532" y="512" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">Apply Button Config</text>
+  <text x="1000" y="588" fill="#64748b" font-family="Arial, sans-serif" font-size="12" text-anchor="end">AI-generated mockup, not a screen photo</text>
+</svg>

@@ -17,7 +17,7 @@
 
 typedef struct {
     lv_obj_t *container;
-    lv_obj_t *title_label;
+    lv_obj_t *version_label;
     lv_obj_t *detail_label;
     lv_obj_t *device_name_label;
     lv_obj_t *wifi_icon;
@@ -43,6 +43,8 @@ static void update_tab_visibility(uint32_t active_idx);
 
 void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, const char *detail_text)
 {
+    (void)title_text;
+
     if (g_status_bar.container) {
         return;
     }
@@ -54,7 +56,7 @@ void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, 
     lv_obj_align(g_status_bar.container, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_flex_flow(g_status_bar.container, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(g_status_bar.container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_top(g_status_bar.container, 12, 0);    // bias content slightly lower while keeping full text visible
+    lv_obj_set_style_pad_top(g_status_bar.container, 24, 0);
     lv_obj_set_style_pad_bottom(g_status_bar.container, 8, 0);
     lv_obj_set_style_pad_left(g_status_bar.container, 12, 0);
     lv_obj_set_style_pad_right(g_status_bar.container, 12, 0);
@@ -71,21 +73,26 @@ void display_helper_create_status_bar(lv_obj_t *parent, const char *title_text, 
     lv_obj_set_style_outline_opa(g_status_bar.container, LV_OPA_TRANSP, 0);
     lv_obj_set_style_shadow_width(g_status_bar.container, 0, 0);
 
-    /* Create the text column first and let it grow so the icon is pushed to the right */
+    g_status_bar.version_label = lv_label_create(g_status_bar.container);
+    lv_label_set_text(g_status_bar.version_label, DISPLAY_HELPER_PROJECT_TITLE);
+    lv_obj_set_style_text_color(g_status_bar.version_label, lv_color_hex(0xCBD5E1), 0);
+    lv_obj_set_style_text_font(g_status_bar.version_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(g_status_bar.version_label, LV_ALIGN_TOP_LEFT, 12, 4);
+    lv_obj_add_flag(g_status_bar.version_label, LV_OBJ_FLAG_FLOATING);
+    lv_obj_clear_flag(g_status_bar.version_label, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_move_foreground(g_status_bar.version_label);
+
+    /* Create the status text column first and let it grow so the icons are pushed right. */
     lv_obj_t *text_column = create_text_column(g_status_bar.container);
     lv_obj_set_flex_grow(text_column, 1);
-    /* Slightly lower the column content to visually center with the bar (top padding only) */
-    lv_obj_set_style_pad_top(text_column, 6, 0);
-
-    g_status_bar.title_label = lv_label_create(text_column);
-    lv_label_set_text(g_status_bar.title_label, title_text ? title_text : "Status");
-    lv_obj_set_style_text_color(g_status_bar.title_label, lv_color_hex(0xE2E8F0), 0);
-    lv_obj_set_style_text_font(g_status_bar.title_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_pad_top(text_column, 8, 0);
 
     g_status_bar.detail_label = lv_label_create(text_column);
     lv_label_set_text(g_status_bar.detail_label, detail_text ? detail_text : "Ready");
     lv_obj_set_style_text_color(g_status_bar.detail_label, lv_color_hex(0x94A3B8), 0);
     lv_obj_set_style_text_font(g_status_bar.detail_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_width(g_status_bar.detail_label, LV_PCT(70));
+    lv_label_set_long_mode(g_status_bar.detail_label, LV_LABEL_LONG_DOT);
 
     g_status_bar.device_name_label = lv_label_create(g_status_bar.container);
     lv_label_set_text(g_status_bar.device_name_label, "");
@@ -186,12 +193,10 @@ void display_helper_set_status_bar_bg(lv_color_t color)
 
 void display_helper_set_status_text(const char *title_text, const char *detail_text)
 {
+    (void)title_text;
+
     if (!ensure_status_bar_exists()) {
         return;
-    }
-
-    if (title_text && g_status_bar.title_label) {
-        lv_label_set_text(g_status_bar.title_label, title_text);
     }
 
     if (detail_text && g_status_bar.detail_label) {

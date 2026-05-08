@@ -9,6 +9,10 @@
 
 #include "lvgl.h"
 
+#define DISPLAY_HELPER_PROJECT_NAME    "SmartP4 Switch"
+#define DISPLAY_HELPER_PROJECT_VERSION "1.0"
+#define DISPLAY_HELPER_PROJECT_TITLE   DISPLAY_HELPER_PROJECT_NAME " v" DISPLAY_HELPER_PROJECT_VERSION
+
 typedef struct {
     lv_obj_t *tabview;
     lv_obj_t *main_tab;
